@@ -1,0 +1,14 @@
+# Ignoramos el .gitignore y la carpeta .git
+.git/
+.gitignore
+
+# Ignoramos el .env.prod y el .env.example
+.env.prod
+.env.example
+
+# Ignoramos el venv
+venv/
+# Ignoramos archivos de vscode
+vscode/
+# Ignoramos los archivos de python como pycache
+__pycache__/

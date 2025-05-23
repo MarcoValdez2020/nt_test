@@ -1,0 +1,9 @@
+# Ignoramos archivos de vscode
+vscode/
+# Ignoramos los archivos de python como pycache
+__pycache__/
+# Ignoramos el ambiente virtual (venv)
+venv/
+
+# Ignoramos el .env.prod
+.env.prod
