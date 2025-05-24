@@ -41,7 +41,7 @@ CREATE TABLE IF NOT EXISTS charges (
     amount NUMERIC(16, 2) NOT NULL,
     status charge_status NOT NULL,
     created_at DATE DEFAULT CURRENT_DATE,
-    updated_at DATE DEFAULT NULL,
+    paid_at DATE DEFAULT NULL,
     FOREIGN KEY (company_id) REFERENCES companies(company_id)
 );
 

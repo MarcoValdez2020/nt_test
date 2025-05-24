@@ -27,7 +27,7 @@ class Charges(SQLModel, table=True):
     amount: Decimal = Field(default=0, max_digits=16, decimal_places=2, nullable=False)
     status: ChargeStatus = Field(default=None, nullable=False)
     created_at: date = Field(default=date.today())
-    updated_at: date = Field(default=None, nullable=True)
+    paid_at: date = Field(default=None, nullable=True)
     
     
     company: "Companies" = Relationship(back_populates="charges")
