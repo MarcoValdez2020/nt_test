@@ -1,7 +1,7 @@
 services:
   postgres: # Servicio de base de datos PostgreSQL
     image: postgres:17-alpine3.21 # Imagen de PostgreSQL
-    container_name: postgres-db-container # Nombre de nuestro contenedor
+    container_name: ${POSTGRES_CONTAINER_NAME} # Nombre de nuestro contenedor
     restart: always # Reiniciar el contenedor automáticamente (para evitar caíadas por reinicios del sistema)
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
