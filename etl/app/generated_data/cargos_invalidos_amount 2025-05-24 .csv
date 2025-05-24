@@ -1,5 +1,0 @@
-charge_id,amount,status,company_id,company_name,created_at,paid_at
-37fd630d05e0b4c9c179eea6f88541e27adfbd07,,pending_payment,cbf1c8b09cd5b549416d49d220a40cbd317f952e,MiPasajefy,2019-03-27,
-a98245b3f1e8484f2e65f245ef35051822d0f4fb,,pending_payment,cbf1c8b09cd5b549416d49d220a40cbd317f952e,MiPasajefy,2019-05-09,
-94f33d3d5a142c7dfcbf247806ad68cf1dc93515,,voided,cbf1c8b09cd5b549416d49d220a40cbd317f952e,MiPasajefy,2019-02-11,
-a07c65559e91a7b08a25f6c7e9f130cdfb727a42,,voided,cbf1c8b09cd5b549416d49d220a40cbd317f952e,MiPasajefy,2019-04-17,
