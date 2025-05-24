@@ -81,7 +81,7 @@ def cargar_companias_y_cargos():
         # Join por name para obtener company_id correcto
         .join(
             company_df_name_join,
-            on="company_id",
+            on="company_name",
             how="left"
         )        # Aplicamos coalesce para tomar los valores correctos
         .with_columns([
