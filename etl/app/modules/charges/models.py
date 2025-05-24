@@ -24,7 +24,6 @@ class Charges(SQLModel, table=True):
 
     charge_id: str = Field(primary_key=True, max_length=40, nullable=False)
     company_id: str = Field(max_length=40, nullable=False, foreign_key='companies.company_id')
-    charge_name: str = Field(max_length=130, nullable=False)
     amount: Decimal = Field(default=0, max_digits=16, decimal_places=2, nullable=False)
     status: ChargeStatus = Field(default=None, nullable=False)
     created_at: date = Field(default=date.today())

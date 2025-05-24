@@ -43,4 +43,4 @@ volumes: # Creación de volúmenes
 networks:
   red-prueba-tecnica:
     name: red-prueba-tecnica      # Nombre asignado a la red
-    driver: bridge                  # Tipo de red (bridge permite comunicación entre contenedores y host)
+    driver: bridge                # Tipo de red (bridge permite comunicación entre contenedores y host)

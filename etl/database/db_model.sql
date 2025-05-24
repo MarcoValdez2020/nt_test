@@ -38,7 +38,6 @@ CREATE TYPE charge_status AS ENUM (
 CREATE TABLE IF NOT EXISTS charges (
     charge_id CHAR(40) PRIMARY KEY NOT NULL,
     company_id CHAR(40) NOT NULL,
-    charge_name VARCHAR(130) NOT NULL,
     amount NUMERIC(16, 2) NOT NULL,
     status charge_status NOT NULL,
     created_at DATE DEFAULT CURRENT_DATE,
