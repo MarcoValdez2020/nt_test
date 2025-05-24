@@ -13,3 +13,6 @@ class BdConfig:
 
     def get_connection_string(self):
         return f"postgresql://{self.db_user}:{self.db_password}@{self.db_host}:{self.db_port}/{self.db_name}"
+    
+# Crear una instancia de la clase BdConfig para usar en el resto de la aplicación
+bd_config = BdConfig()

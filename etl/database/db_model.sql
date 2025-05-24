@@ -9,7 +9,28 @@ Además, me pareció personalmente que el ejercicio se prestaba a usar un motor 
 CREATE TABLE IF NOT EXISTS companies (
     company_id CHAR(40) PRIMARY KEY NOT NULL,
     company_name VARCHAR(130) NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at DATE DEFAULT CURRENT_DATE
+);
+
+/* Creacion de un ENUM para el status de los charges con los valores obtenidos a partir de revisar la data manualmente
+    - voided
+    - pending_payment
+    - paid
+    - pre_authorized
+    - refunded
+    - charged_back
+    - expired
+    - partially_refunded
+*/
+CREATE TYPE charge_status AS ENUM (
+    'voided',
+    'pending_payment',
+    'paid',
+    'pre_authorized',
+    'refunded',
+    'charged_back',
+    'expired',
+    'partially_refunded'
 );
 
 
@@ -18,8 +39,10 @@ CREATE TABLE IF NOT EXISTS charges (
     charge_id CHAR(40) PRIMARY KEY NOT NULL,
     company_id CHAR(40) NOT NULL,
     charge_name VARCHAR(130) NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT NULL,
+    amount NUMERIC(16, 2) NOT NULL,
+    status charge_status NOT NULL,
+    created_at DATE DEFAULT CURRENT_DATE,
+    updated_at DATE DEFAULT NULL,
     FOREIGN KEY (company_id) REFERENCES companies(company_id)
 );
 

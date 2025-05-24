@@ -11,7 +11,26 @@ services:
       - "${POSTGRES_PORT}:5432"
     volumes:
       - postgres-container-data:/var/lib/postgresql/data # Volumen para persistencia de datos
-      - ./etl/database/db_model.sql:/docker-entrypoint-initdb.d/db_model.sql # Script SQL para inicializar la base de datos
+      - ./database/db_model.sql:/docker-entrypoint-initdb.d/db_model.sql # Script SQL para inicializar la base de datos
+    networks:
+      - red-prueba-tecnica # Conexión a la red de producción
+
+
+  etl:
+    build:
+      context: .. # Contexto de construcción del contenedor ETL
+      dockerfile: etl/Dockerfile # Ruta del Dockerfile para el contenedor ETL
+    image: etl-image:v1.0.0 # Nombre de la imagen del contenedor ETL
+    container_name: etl-container # Nombre del contenedor ETL
+    restart: "no" # No reiniciar automáticamente
+    environment:
+      PYTHONUNBUFFERED: 1 # Para evitar el buffering de salida de Python y mostrar los logs en tiempo real
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_CONTAINER_NAME: ${POSTGRES_CONTAINER_NAME}
+    volumes:
+      - ./app:/app # Montar el directorio de la aplicación
     networks:
       - red-prueba-tecnica # Conexión a la red de producción
 
