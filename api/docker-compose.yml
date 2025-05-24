@@ -1,0 +1,13 @@
+services:
+  api:
+    build:
+      context: .. # Contexto de construcción del contenedor API
+      dockerfile: api/Dockerfile # Ruta del Dockerfile para el contenedor API
+    image: api-image:v1.0.0 # Nombre de la imagen del contenedor API
+    container_name: api-container # Nombre del contenedor API
+    restart: always # Reiniciar el contenedor automáticamente
+    command: uvicorn main:app --host 0.0.0.0 --port 8000
+    ports:
+      - "8000:8000" # Mapeo del puerto 8000 del host al puerto 8000 del contenedor
+    volumes:
+      - ../api/app:/app # Montar el directorio de la aplicación
