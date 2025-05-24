@@ -3,11 +3,7 @@ Elegí Postgres como motor de base de datos por su facilidad de uso y por ser op
 Además, me pareció personalmente que el ejercicio se prestaba a usar un motor de base de datos relacional.
 */
 
--- Creación de la base de datos
-CREATE DATABASE IF NOT EXISTS next_technologies;
-
--- Conexión a la base de datos
-USE next_technologies;
+-- No usamos create ni use puesto que  la bd es creada al momento del arranque del contenedor de docker.
 
 -- Creación de la tabla de companies
 CREATE TABLE IF NOT EXISTS companies (
@@ -23,7 +19,7 @@ CREATE TABLE IF NOT EXISTS charges (
     company_id CHAR(40) NOT NULL,
     charge_name VARCHAR(130) NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT NULL,
     FOREIGN KEY (company_id) REFERENCES companies(company_id)
 );
 

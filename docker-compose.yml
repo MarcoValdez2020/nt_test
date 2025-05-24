@@ -1,0 +1,27 @@
+services:
+  postgres: # Servicio de base de datos PostgreSQL
+    image: postgres:17-alpine3.21 # Imagen de PostgreSQL
+    container_name: postgres-db-container # Nombre de nuestro contenedor
+    restart: always # Reiniciar el contenedor automáticamente (para evitar caíadas por reinicios del sistema)
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    ports:
+      - "${POSTGRES_PORT}:5432"
+    volumes:
+      - postgres-container-data:/var/lib/postgresql/data # Volumen para persistencia de datos
+      - ./etl/database/db_model.sql:/docker-entrypoint-initdb.d/db_model.sql # Script SQL para inicializar la base de datos
+    networks:
+      - red-prueba-tecnica # Conexión a la red de producción
+
+
+volumes: # Creación de volúmenes
+  postgres-container-data: # Creación de un volumen para persistir datos de PostgreSQL
+    name: postgres-container-data  # Nombre asignado al volumen
+
+
+networks:
+  red-prueba-tecnica:
+    name: red-prueba-tecnica      # Nombre asignado a la red
+    driver: bridge                  # Tipo de red (bridge permite comunicación entre contenedores y host)
