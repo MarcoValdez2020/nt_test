@@ -14,9 +14,17 @@ services:
       - ./database/db_model.sql:/docker-entrypoint-initdb.d/db_model.sql # Script SQL para inicializar la base de datos
     networks:
       - red-prueba-tecnica # Conexión a la red de producción
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "${POSTGRES_USER}"] # Comando para verificar la salud del contenedor
+      interval: 2s # Intervalo entre chequeos de salud
+      timeout: 5s # Tiempo de espera para el chequeo de salud
+      retries: 3 # Número de reintentos antes de marcar el contenedor como no saludable
 
 
   etl:
+    depends_on:
+      postgres: # Dependencia del contenedor de PostgreSQL
+        condition: service_healthy # Esperar a que el contenedor de PostgreSQL esté saludable
     build:
       context: .. # Contexto de construcción del contenedor ETL
       dockerfile: etl/Dockerfile # Ruta del Dockerfile para el contenedor ETL

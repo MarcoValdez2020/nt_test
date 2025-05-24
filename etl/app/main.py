@@ -4,6 +4,7 @@ from core.uow import UnitOfWork
 from modules.companies.service import CompaniesService
 from modules.charges.service import ChargesService
 
+from modules.charges.models import ChargeStatus
 
 def cargar_companias_y_cargos():
     """ Carga las empresas y los cargos desde los archivos CSV a la base de datos. """
@@ -11,6 +12,13 @@ def cargar_companias_y_cargos():
     print("****** Cargando empresas y cargos... ******")
     # Cargamos los datos en un dataframe de Polars
     data_df = pl.read_csv('data/data_prueba_tecnica.csv')
+    # Limpiamos los nombres de las columnas
+    data_df = data_df.rename({
+        "id": "charge_id",
+        "name": "company_name",
+        "paid_at\r": "paid_at",  # Limpiamos el salto de línea al final de paid_at
+    })
+
     print("DataFrame cargado con éxito.")
     
     print("Procesando cargos y compañias nuevas...")
@@ -18,7 +26,7 @@ def cargar_companias_y_cargos():
     # 1. Agrupamos por company_id y contamos las ocurrencias de cada nombre y cada id para mantener la combinación más frecuente en ambas columnas
     company_df = (
         data_df
-        .select(pl.col("company_id"), pl.col("name").alias("company_name"))  # Seleccionamos name y lo renombramos, y el company_id
+        .select(pl.col("company_id"), pl.col("company_name"))  # Seleccionamos name y lo renombramos, y el company_id
         .filter(pl.col("company_id").is_not_null())  # Filtramos filas donde company_id no es nulo
         .filter(pl.col("company_name").is_not_null())  # Filtramos filas donde name no es nulo
         .group_by("company_id", "company_name")  # Agrupa por ambas columnas
@@ -35,8 +43,126 @@ def cargar_companias_y_cargos():
     agregar_companias_nuevas(company_df)
 
 
+    print("Procesando cargos...")
+    # 2. Buscamos limpiar los cargos, filtrando los nulos, y guardar los en un archivo CSV para notificar que no se cargaron
+    charges_null_df = (
+        data_df
+        .filter(pl.col("charge_id").is_null())  # Filtramos filas donde charge no es nulo
+    )
+    # Guardamos los cargos nulos en un archivo CSV
+    if not charges_null_df.is_empty():
+        charges_null_df.write_csv("generated_data/cargos_nulos.csv")
+        print(f"Se encontraron {charges_null_df.height} cargos con ID nulos y se guardaron en 'generated_data/cargos_nulos.csv'.")
+    
+    # 3. Como el df tiene nombres y companies_ids incorrectos, pero bien el almenos uno de los campos:
+    # Los corrergiremos por medio de dos joins, para cuadrarlo con los nombres correctos y con los companies id_correctos
 
     
+    # Preparamos dataframes específicamente para los joins
+    company_df_id_join = company_df.select(
+        pl.col("company_id"),
+        pl.col("company_name").alias("company_name_by_id")
+    )
+    
+    company_df_name_join = company_df.select(
+        pl.col("company_id").alias("company_id_by_name"),
+        pl.col("company_name")
+    )
+
+    # Realizamos los joins con columnas claramente nombradas
+    charges_df = (
+        data_df.filter(pl.col("charge_id").is_not_null())  # Filtramos filas donde charge no es nulo
+        # Join por company_id para obtener company_name correcto
+        .join(
+            company_df_id_join,
+            on="company_id",
+            how="left"
+        )
+        # Join por name para obtener company_id correcto
+        .join(
+            company_df_name_join,
+            on="company_id",
+            how="left"
+        )        # Aplicamos coalesce para tomar los valores correctos
+        .with_columns([
+            # Para company_id, preferimos el ID del join por name si existe,
+            # de lo contrario mantenemos el original
+            pl.coalesce(
+                pl.col("company_id_by_name"),
+                pl.col("company_id")
+            ).alias("company_id_final"),
+            
+            # Para company_name, preferimos el nombre del join por id si existe,
+            # de lo contrario usamos el name original
+            pl.coalesce(
+                pl.col("company_name_by_id"),
+                pl.col("company_name")
+            ).alias("company_name_final")
+        ])
+        # Seleccionamos solo las columnas que necesitamos con valores correctos
+        .select(
+            "charge_id",
+            "amount", 
+            "status", 
+            "company_id_final",
+            "company_name_final",
+            "created_at",
+            "paid_at"
+        )
+        # Renombramos las columnas finales para tener nombres limpios
+        .rename({
+            "company_id_final": "company_id",
+            "company_name_final": "company_name"
+        })
+    )
+
+    # Una vez correctos los nombres y ids procedemos a filtrar aquellos charges con con estatus validos
+    # 4. Filtramos los cargos con estatus válidos creando una lista de estatus a partir de la clase definida en el modelo
+    valid_statues  = [ statue.value for statue in ChargeStatus]
+
+    # Obtener los registros que no tienen estatus valido y guardarlos en un CSV
+    invalid_charges_df = (
+        charges_df
+        .filter(~pl.col("status").is_in(valid_statues))  # Filtramos filas donde status no está en los estatus válidos
+    )
+
+    if not invalid_charges_df.is_empty():
+        # Guardamos los cargos inválidos en un archivo CSV
+        invalid_charges_df.write_csv("generated_data/cargos_invalidos.csv")
+        print(f"Se encontraron {invalid_charges_df.height} cargos con estatus inválidos y se guardaron en 'generated_data/cargos_invalidos.csv'.")
+    
+    # Filtrar solo los cargos con estatus válidos
+    charges_df = (
+        charges_df
+        .filter(pl.col("status").is_in(valid_statues))  # Filtramos filas donde status está en los estatus válidos
+    )
+
+
+    # Limpiar las columnas de fechas eliminando los caracteres basura
+    charges_df = (
+        charges_df
+        .with_columns([
+            pl.col("created_at").str.strip_chars().alias("created_at"),
+            pl.col("paid_at").str.strip_chars().alias("paid_at")
+        ])
+    )
+
+    # Convertir la columna 'created_at'  y 'paid_at' a tipo fecha en formato YYYY-MM-DD
+    charges_df = (
+        charges_df
+        .with_columns([
+            parsear_fechas("created_at"),
+            parsear_fechas("paid_at")
+        ])
+    )
+
+
+
+
+    
+
+
+
 def agregar_companias_nuevas(company_df: pl.DataFrame):
     """ Agrega nuevas empresas a la base de datos. 
     Args:
@@ -69,6 +195,30 @@ def agregar_companias_nuevas(company_df: pl.DataFrame):
     
     print("Proceso de compañías completado.")
 
+
+def parsear_fechas(col:str) -> pl.DataFrame:
+    """ Limpia las fechas de un DataFrame. 
+    Debido a que se encontraron fechas en diferentes formatos, se implementa una función para limpiar las fechas
+    y convertirlas al formato YYYY-MM-DD.
+    Se manejan tres casos:
+        1. Formato YYYY-MM-DDTHH:MM:SS
+        2. Formato YYYYMMDD
+        3. Formato YYYY-MM-DD
+    Args:
+        col (str): Nombre de la columna a limpiar.
+    Returns:
+        pl.Expression: Expresión de Polars para limpiar la columna de fechas.
+    """
+    return  (
+        pl.when(pl.col(col).is_null()) 
+            .then(None) # Si la columna es nula, la dejamos como None
+        .when(pl.col(col).str.contains("T")) # Evaluamos el formato YYYY-MM-DDTHH:MM:SS
+            .then(pl.col(col).str.strptime(pl.Datetime, "%Y-%m-%dT%H:%M:%S", strict=False).dt.date()) # Convertimos a fecha
+        .when(pl.col(col).str.len_chars() == 8) # Evaluamos el formato YYYYMMDD
+            .then(pl.col(col).str.strptime(pl.Date, "%Y%m%d", strict=False)) # Convertimos a fecha
+        .otherwise(pl.col(col).str.strptime(pl.Date, "%Y-%m-%d", strict=False)) # Si no es ninguno de los anteriores, asumimos que es YYYY-MM-DD
+        .alias(col)
+    )
 
 
 
