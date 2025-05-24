@@ -30,7 +30,7 @@ services:
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_CONTAINER_NAME: ${POSTGRES_CONTAINER_NAME}
     volumes:
-      - ./app:/app # Montar el directorio de la aplicación
+      - ../etl/app:/app # Montar el directorio de la aplicación
     networks:
       - red-prueba-tecnica # Conexión a la red de producción
 
