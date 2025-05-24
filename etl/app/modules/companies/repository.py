@@ -40,7 +40,7 @@ class CompaniesRepository:
             bool: True si la operación fue exitosa.
         """
         
-        # Insertar las ventas en la base de datos
+        # Insertar las empresas en la base de datos
         statement = insert(Companies).values(companies)
         self.session.execute(statement)
         print(f'Lote de {len(companies)} empresas insertadas correctamente.')

@@ -53,9 +53,9 @@ class ChargesRepository:
             bool: True si la operación fue exitosa.
         """
         
-        # Insertar las ventas en la base de datos
+        # Insertar las cargos en la base de datos
         statement = insert(Charges).values(charges)
         self.session.execute(statement)
-        print(f'Lote de {len(charges)} ventas insertadas correctamente.')
+        print(f'Lote de {len(charges)} cargos insertadas correctamente.')
 
         return True

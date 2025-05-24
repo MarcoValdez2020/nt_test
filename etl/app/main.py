@@ -1,10 +1,13 @@
 import polars as pl
+from datetime import date
 
 from core.uow import UnitOfWork
 from modules.companies.service import CompaniesService
 from modules.charges.service import ChargesService
 
-from modules.charges.models import ChargeStatus
+from modules.charges.models import ChargeStatus, Charges
+
+today = date.today().strftime("%Y-%m-%d") # Obtenemos la fecha de hoy en formato YYYY-MM-DD
 
 def cargar_companias_y_cargos():
     """ Carga las empresas y los cargos desde los archivos CSV a la base de datos. """
@@ -51,8 +54,8 @@ def cargar_companias_y_cargos():
     )
     # Guardamos los cargos nulos en un archivo CSV
     if not charges_null_df.is_empty():
-        charges_null_df.write_csv("generated_data/cargos_nulos.csv")
-        print(f"Se encontraron {charges_null_df.height} cargos con ID nulos y se guardaron en 'generated_data/cargos_nulos.csv'.")
+        charges_null_df.write_csv(f"generated_data/cargos_ids_nulos {today}.csv")
+        print(f"Se encontraron {charges_null_df.height} cargos con ID nulos y se guardaron en 'generated_data/cargos_nulos {today}.csv'.")
     
     # 3. Como el df tiene nombres y companies_ids incorrectos, pero bien el almenos uno de los campos:
     # Los corrergiremos por medio de dos joins, para cuadrarlo con los nombres correctos y con los companies id_correctos
@@ -128,8 +131,8 @@ def cargar_companias_y_cargos():
 
     if not invalid_charges_df.is_empty():
         # Guardamos los cargos inválidos en un archivo CSV
-        invalid_charges_df.write_csv("generated_data/cargos_invalidos.csv")
-        print(f"Se encontraron {invalid_charges_df.height} cargos con estatus inválidos y se guardaron en 'generated_data/cargos_invalidos.csv'.")
+        invalid_charges_df.write_csv(f"generated_data/cargos_invalidos_estatus {today} .csv")
+        print(f"Se encontraron {invalid_charges_df.height} cargos con estatus inválidos y se guardaron en 'generated_data/cargos_invalidos {today} .csv'.")
     
     # Filtrar solo los cargos con estatus válidos
     charges_df = (
@@ -147,6 +150,7 @@ def cargar_companias_y_cargos():
         ])
     )
 
+
     # Convertir la columna 'created_at'  y 'paid_at' a tipo fecha en formato YYYY-MM-DD
     charges_df = (
         charges_df
@@ -155,6 +159,39 @@ def cargar_companias_y_cargos():
             parsear_fechas("paid_at")
         ])
     )
+
+
+    # Castear la columna amount para que sean decimales con formato 16,2, y ponemos strict=False para filtrar los registos que superen el formato
+    # y los guardamos en un CSV
+    charges_df = (
+        charges_df
+        .with_columns([
+            pl.col("amount").cast(pl.Decimal(16, 2), strict=False).alias("amount")
+        ])
+    )
+
+    # Crear un df con los cargos inválidos donde amount es nulo
+    invalid_amount_df = (
+        charges_df
+        .filter(pl.col("amount").is_null())  # Filtramos filas donde amount no es nulo
+    )
+
+    # Evaluamos si el df de cargos inválidos tiene alguno por agrergar
+    if not invalid_amount_df.is_empty():
+        # Guardamos los cargos inválidos en un archivo CSV
+        invalid_amount_df.write_csv(f"generated_data/cargos_invalidos_amount {today} .csv")
+        print(f"Se encontraron {invalid_amount_df.height} cargos con amount inválido y se guardaron en 'generated_data/cargos_invalidos_amount {today} .csv'.")
+
+    # Filtramos los cargos con amount válidos
+    charges_df = (
+        charges_df
+        .filter(pl.col("amount").is_not_null())  # Filtramos filas donde amount no es nulo
+    )
+
+    print("DataFrame de cargos procesado con éxito, procediendo a guardar en la base de datos.")
+    # 5. Guardamos los cargos válidos en la base de datos
+    agregar_cargos_nuevos(charges_df)
+    print("Carga de cargos completada.")
 
 
 
@@ -221,6 +258,48 @@ def parsear_fechas(col:str) -> pl.DataFrame:
     )
 
 
+def agregar_cargos_nuevos(charges_df: pl.DataFrame, chunk_size: int = 1000):
+    """ Agrega nuevos cargos a la base de datos. 
+    Args:
+        charges_df (pl.DataFrame): DataFrame de Polars con los cargos a agregar.
+    """
+    # Instanciamos el servicio de cargos
+    charges_service = ChargesService(UnitOfWork())
+
+    
+    columns_to_keep = list(Charges.model_fields.keys()) # Obtenemos los nombres de las columnas del modelo Charges
+    charges_df = charges_df.select(columns_to_keep) # Seleccionamos solo las columnas que están en el modelo Charges
+
+    # Llamamos al servicio para traer los cargos existentes
+    existing_charges_df = charges_service.get_all_charges()
+
+    # Si no hay cargos existentes, los insertamos todos
+    if existing_charges_df.is_empty():
+        print("No hay cargos existentes, insertando todos los nuevos.")
+        # Dividimos el DataFrame en chunks para insertar en lotes
+        for i in range(0, charges_df.height, chunk_size):
+            chunk = charges_df[i:i+chunk_size]
+            # Insertamos el chunk en la base de datos
+            charges_service.create_charges_batch(chunk.to_dicts())
+    else:
+        # Filtramos los cargos que no están en la base de datos
+        new_charges_df = charges_df.join(
+            existing_charges_df.select("charge_id"),
+            on="charge_id",
+            how="anti"
+        )
+        
+        # Si hay nuevos cargos, los insertamos
+        if not new_charges_df.is_empty():
+            print(f"Nuevos cargos a agregar: {new_charges_df.height} ")
+            # Dividimos el DataFrame en chunks para insertar en lotes
+            for i in range(0, new_charges_df.height, chunk_size):
+                chunk = new_charges_df[i:i+chunk_size]
+                charges_service.create_charges_batch(chunk.to_dicts())
+        else:
+            print("No hay nuevos cargos para agregar.")
+    
+    print("Proceso de cargos completado.")
 
 if __name__ == "__main__":
     print("Iniciando la carga de empresas y cargos...")

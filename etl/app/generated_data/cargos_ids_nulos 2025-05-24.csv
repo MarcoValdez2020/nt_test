@@ -1,0 +1,4 @@
+charge_id,company_name,company_id,amount,status,created_at,paid_at
+,MiPasajefy,cbf1c8b09cd5b549416d49d220a40cbd317f952e,66.16,pending_payment,2019-03-14,""
+,MiPasajefy,cbf1c8b09cd5b549416d49d220a40cbd317f952e,55.71,paid,2019-02-13,"2019-02-13"
+,MiPasajefy,cbf1c8b09cd5b549416d49d220a40cbd317f952e,89.36,paid,2019-04-17,"2019-04-17"
