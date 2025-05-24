@@ -6,7 +6,7 @@ services:
     image: api-image:v1.0.0 # Nombre de la imagen del contenedor API
     container_name: api-container # Nombre del contenedor API
     restart: always # Reiniciar el contenedor automáticamente
-    command: uvicorn main:app --host 0.0.0.0 --port 8000
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 # Comando para iniciar el servidor Uvicorn
     ports:
       - "8000:8000" # Mapeo del puerto 8000 del host al puerto 8000 del contenedor
     volumes:

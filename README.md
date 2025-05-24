@@ -74,4 +74,46 @@ ORDER BY fecha, co.company_name ASC;
 ```
 
 
-# 2. Api
+# 2. Api para calcular el numero faltante de un conjunto de numeros que se extrajo uno.
+
+Este proyecto es una API de Python que utiliza la biblioteca `FastAPI` para crear una API RESTful que permite calcular el número faltante de un conjunto de números que se extrajo uno.
+El `docker-compose.yml` ya viene configurado para crear el contenedor de la API, y por defecto expone el puerto 8000 que es el que utiliza FastAPI para servir la API.
+
+**Requisitos previos:**
+- Tener instalado `Docker` y `docker-compose` en tu máquina.
+
+**Proceso de instalación:**
+1. Ejecutar el siguiente comando para construir el contenedor del API:
+```bash
+docker-compose -f api/docker-compose.yml build
+```
+2. Ejecutar el siguiente comando para iniciar el contenedor del API:
+```bash
+docker-compose -f api/docker-compose.yml up
+```
+
+
+
+**Link de ejecución de la API:**
+A continuación se muestra el link para ejecutar la API, *en caso de que no se haya cambiado el puerto*, el link es el siguiente:
+- http://localhost:8000/docs
+
+**Endpoints:**
+- `GET /`: Devuelve un mensaje de bienvenida, con el link hacia la documentacion de la API (*si no se ha cambiado el puerto*).
+- `POST /extraer-numero`: Permite extraer un numero del 1 al 100 y lo elimina de la lista de numeros. El cuerpo de la peticion debe contener el numero a extraer en formato JSON, por ejemplo:
+```json
+{
+    "numero": 5
+}
+```
+- `GET /calcular-numero-extraido`: Permite calcular el numero faltante de la lista de numeros, por medio de la comparacion de dos sets, el set original y el set de numeros que quedan, retornando el numero faltante gracias a la diferencia entre ambos sets.
+- `POST /reiniciar`: Permite reiniciar la lista de numeros a su estado original, es decir, del 1 al 100.
+
+**Explicación del api:**
+> * Se utilizó `FastAPI` para crear la API RESTful, ya que es una biblioteca muy rápida y eficiente para crear APIs en Python.
+> * Se utilizó `pydantic` para crear modelos de las respuestas y las peticiones.
+> * Se creó una clase llamada `Numeros` que contiene los numeros del 1 al 100, asi como 3 metodos:
+>   - `extraer_numero(self, numero:int)`: que extrae un numero del 1 al 100 y lo elimina de la lista de numeros.
+>   - `calcular_numero_extraido(self)`: que calcula el numero faltante de la lista de numeros, por medio de la comparacion de dos sets, el set original y el set de numeros que quedan, retornando el numero faltante gracias a la diferencia entre ambos sets.
+>   - `reiniciar(self)`: que reinicia la lista de numeros a su estado original.
+

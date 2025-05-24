@@ -18,7 +18,6 @@ class Numeros:
         Returns:
             str: Mensaje de éxito
         """
-        print(len(self.numeros))
         if not isinstance(numero, int):
             raise TypeError("El número debe ser un entero")
         if numero < 1 or numero > 100:
