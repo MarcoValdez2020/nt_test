@@ -45,3 +45,15 @@ CREATE TABLE IF NOT EXISTS charges (
     FOREIGN KEY (company_id) REFERENCES companies(company_id)
 );
 
+
+-- Creación de la vista para vizualizar los datos de las empresas y sus cargos
+CREATE OR REPLACE VIEW view_daily_company_totals AS
+SELECT 
+    ch.created_at as fecha,
+    co.company_id,
+    co.company_name,
+    SUM(ch.amount)
+FROM charges ch
+JOIN companies co ON co.company_id = ch.company_id
+GROUP BY fecha, co.company_id, co.company_name
+ORDER BY fecha, co.company_name ASC;
